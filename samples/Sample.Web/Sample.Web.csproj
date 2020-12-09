@@ -2,6 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UserSecretsId>b5f9bf98-4367-4c7e-a387-72c46fb9f663</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ZoomClient.csproj" />
+  </ItemGroup>
 
 </Project>
