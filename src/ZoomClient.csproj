@@ -2,6 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <PackageId>ZoomClient.Law.Ucdavis.Edu</PackageId>
+    <Authors>UC Davis School of Law</Authors>
+    <Description>Zoom API client for authenticating, reading, and writing to some of the available Zoom API calls.</Description>
+    <RepositoryUrl>gitproj/ZoomClient</RepositoryUrl>
+    <PackageTags>Zoom API Rest Client JWT</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
