@@ -325,6 +325,8 @@ namespace ZoomClient
                 .AddParameter("userId", userId, ParameterType.UrlSegment)
                 .AddJsonBody(meeting);
 
+            _logger.LogDebug($"Create Meeting For User JSON: {JsonConvert.SerializeObject(meeting)}; Request Body {request.Body}");
+
             var response = client.Execute(request);
             Thread.Sleep(RateLimit.Medium);
 
