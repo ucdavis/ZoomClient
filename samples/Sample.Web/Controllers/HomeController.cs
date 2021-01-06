@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Sample.Web.Models;
 using ZoomClient;
+using ZoomClient.Domain;
 
 namespace Sample.Web.Controllers
 {
@@ -35,6 +36,24 @@ namespace Sample.Web.Controllers
 
         public IActionResult Privacy()
         {
+            var request = new MeetingRequest
+            {
+                topic = "Test-Meeting",
+                start_time = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
+                duration = 60,
+                agenda = "banner-agenda-link",
+                password = "123456",
+                recurrence = new Recurrence
+                {
+                    type = 2,
+                    repeat_interval = 1,
+                    weekly_days = "2,4",
+                    end_date_time = DateTime.Now.AddMonths(4).Date.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+                }
+            };
+
+            var result = _zoomClient.CreateMeetingForUser(request, "emhenn@ucdavis.edu");
+
             return View();
         }
 

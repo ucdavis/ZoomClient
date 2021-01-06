@@ -13,6 +13,7 @@ using System.IO;
 using ZoomClient.Domain.Billing;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Logging;
+using RestSharp.Serializers.NewtonsoftJson;
 
 namespace ZoomClient
 {
@@ -27,6 +28,7 @@ namespace ZoomClient
         public Zoom(ILogger<Zoom> logger)
         {
             client = new RestClient(BaseUrl);
+            client.UseNewtonsoftJson();
             _logger = logger;
         }
 
