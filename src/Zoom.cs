@@ -250,6 +250,11 @@ namespace ZoomClient
                 var response = client.Execute(request);
                 Thread.Sleep(RateLimit.Medium);
 
+                if (response.Content == null)
+                {
+                    _logger.LogWarning($"Zoom.GetMeetingsForUser returned null. {response.StatusCode} - {response.StatusDescription}");
+                }
+
                 var result = JsonConvert.DeserializeObject<ZList<Meeting>>(response.Content);
                 if (result != null && result.Results != null)
                 {
