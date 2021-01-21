@@ -252,16 +252,17 @@ namespace ZoomClient
 
                 if (response.Content == null)
                 {
-                    _logger.LogWarning($"Zoom.GetMeetingsForUser returned null. {response.StatusCode} - {response.StatusDescription}");
+                    _logger.LogWarning($"Zoom.GetMeetingsForUser returned null for userId '{userId}' pg{page} [{response.StatusCode} - {response.StatusDescription}]");
                 }
-
-                var result = JsonConvert.DeserializeObject<ZList<Meeting>>(response.Content);
-                if (result != null && result.Results != null)
+                else
                 {
-                    meetings.AddRange(result.Results);
+                    var result = JsonConvert.DeserializeObject<ZList<Meeting>>(response.Content);
+                    if (result != null && result.Results != null)
+                    {
+                        meetings.AddRange(result.Results);
+                    }
+                    pages = result.page_count;
                 }
-
-                pages = result.page_count;
             }
             while (page < pages);
 
