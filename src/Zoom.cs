@@ -253,6 +253,8 @@ namespace ZoomClient
                 if (String.IsNullOrEmpty(response.Content))
                 {
                     _logger.LogWarning($"Zoom.GetMeetingsForUser returned null or empty for userId '{userId}' pg{page} [{response.StatusCode} - {response.StatusDescription}]");
+                    _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                    _logger.LogWarning($"Response Headers: {JsonConvert.SerializeObject(response.Headers)}");
                 }
                 else
                 {
