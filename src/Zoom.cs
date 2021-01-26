@@ -250,6 +250,8 @@ namespace ZoomClient
                 var response = client.Execute(request);
                 Thread.Sleep(RateLimit.Medium);
 
+                _logger.LogDebug($"Zoom.GetMeetingsForUser for uid '{userId}' pg.{page} returned '{response.Content}'.");
+
                 if (response.Content == null)
                 {
                     _logger.LogWarning($"Zoom.GetMeetingsForUser returned null for userId '{userId}' pg{page} [{response.StatusCode} - {response.StatusDescription}]");
