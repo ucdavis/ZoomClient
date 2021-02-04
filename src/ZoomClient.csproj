@@ -7,7 +7,8 @@
     <Description>Zoom API client for authenticating, reading, and writing to some of the available Zoom API calls.</Description>
     <RepositoryUrl>gitproj/ZoomClient</RepositoryUrl>
     <PackageTags>Zoom API Rest Client JWT</PackageTags>
-    <Version>1.0.9</Version>
+    <Version>1.0.10</Version>
+    <PackageReleaseNotes>better logging added on failed http calls.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

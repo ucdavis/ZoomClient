@@ -63,11 +63,16 @@ namespace ZoomClient
             var response = client.Execute(request);
             Thread.Sleep(RateLimit.Light);
 
-            if (response.StatusCode == HttpStatusCode.OK)
+            if (response.StatusCode == HttpStatusCode.OK && response.Content != null)
             {
                 return JsonConvert.DeserializeObject<User>(response.Content);
             }
             _logger.LogWarning($"Zoom.GetUser returned {response.StatusCode} - {response.StatusDescription}");
+            if (!String.IsNullOrEmpty(response.ErrorMessage))
+            {
+                _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                _logger.LogWarning($"ErrorException: {response.ErrorException}");
+            }
 
             return null;
         }
@@ -107,13 +112,25 @@ namespace ZoomClient
                 var response = client.Execute(request);
                 Thread.Sleep(RateLimit.Medium);
 
-                var result = JsonConvert.DeserializeObject<ZList<User>>(response.Content);
-                if (result != null && result.Results != null)
+                if (response.StatusCode == HttpStatusCode.OK && response.Content != null)
                 {
-                    users.AddRange(result.Results);
-                }
+                    var result = JsonConvert.DeserializeObject<ZList<User>>(response.Content);
 
-                pages = result.page_count;
+                    if (result?.Results != null)
+                    {
+                        users.AddRange(result.Results);
+                        pages = result.page_count;
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning($"Zoom.GetUsers pg{page} returned {response.StatusCode} - {response.StatusDescription}");
+                    if (!String.IsNullOrEmpty(response.ErrorMessage))
+                    {
+                        _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                        _logger.LogWarning($"ErrorException: {response.ErrorException}");
+                    }
+                }
             }
             while (page < pages);
 
@@ -143,6 +160,11 @@ namespace ZoomClient
                 return JsonConvert.DeserializeObject<UserInfo>(response.Content);
             }
             _logger.LogWarning($"Zoom.CreateUser returned {response.StatusCode} - {response.StatusDescription}");
+            if (!String.IsNullOrEmpty(response.ErrorMessage))
+            {
+                _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                _logger.LogWarning($"ErrorException: {response.ErrorException}");
+            }
 
             return null;
         }
@@ -166,7 +188,17 @@ namespace ZoomClient
             var response = client.Execute(request);
             Thread.Sleep(RateLimit.Light);
 
-            return (response.StatusCode == HttpStatusCode.NoContent);
+            if (response.StatusCode == HttpStatusCode.NoContent)
+            {
+                return true;
+            }
+            _logger.LogWarning($"Zoom.UpdateUserProfile returned {response.StatusCode} - {response.StatusDescription}");
+            if (!String.IsNullOrEmpty(response.ErrorMessage))
+            {
+                _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                _logger.LogWarning($"ErrorException: {response.ErrorException}");
+            }
+            return false;
         }
 
         /// <summary>
@@ -207,6 +239,12 @@ namespace ZoomClient
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 return JsonConvert.DeserializeObject<Meeting>(response.Content);
+            }
+            _logger.LogWarning($"Zoom.GetMeetingDetails returned {response.StatusCode} - {response.StatusDescription}");
+            if (!String.IsNullOrEmpty(response.ErrorMessage))
+            {
+                _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                _logger.LogWarning($"ErrorException: {response.ErrorException}");
             }
 
             return null;
@@ -250,20 +288,23 @@ namespace ZoomClient
                 var response = client.Execute(request);
                 Thread.Sleep(RateLimit.Medium);
 
-                if (String.IsNullOrEmpty(response.Content))
-                {
-                    _logger.LogWarning($"Zoom.GetMeetingsForUser returned null or empty for userId '{userId}' pg{page} [{response.StatusCode} - {response.StatusDescription}]");
-                    _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
-                    _logger.LogWarning($"ErrorException: {response.ErrorException}");
-                }
-                else
+                if (response.StatusCode == HttpStatusCode.OK && response.Content != null)
                 {
                     var result = JsonConvert.DeserializeObject<ZList<Meeting>>(response.Content);
                     if (result != null && result.Results != null)
                     {
                         meetings.AddRange(result.Results);
+                        pages = result.page_count;
                     }
-                    pages = result.page_count;
+                }
+                else
+                {
+                    _logger.LogWarning($"Zoom.GetMeetingsForUser for userId '{userId}' pg{page} returned {response.StatusCode} - {response.StatusDescription}");
+                    if (!String.IsNullOrEmpty(response.ErrorMessage))
+                    {
+                        _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                        _logger.LogWarning($"ErrorException: {response.ErrorException}");
+                    }
                 }
             }
             while (page < pages);
@@ -288,13 +329,18 @@ namespace ZoomClient
             var response = client.Execute(request);
             Thread.Sleep(RateLimit.Medium);
 
-            if (response.StatusCode != HttpStatusCode.OK)
+            if (response.StatusCode == HttpStatusCode.OK)
             {
-                return null;
+                var result = JsonConvert.DeserializeObject<ZList<Meeting>>(response.Content);
+                return result.Results.ToList();
             }
-
-            var result = JsonConvert.DeserializeObject<ZList<Meeting>>(response.Content);
-            return result.Results.ToList();
+            _logger.LogWarning($"Zoom.GetPastMeetingInstances for meetingId '{meetingId}' returned {response.StatusCode} - {response.StatusDescription}");
+            if (!String.IsNullOrEmpty(response.ErrorMessage))
+            {
+                _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                _logger.LogWarning($"ErrorException: {response.ErrorException}");
+            }
+            return null;
         }
 
         /// <summary>
@@ -312,12 +358,17 @@ namespace ZoomClient
             var response = client.Execute(request);
             Thread.Sleep(RateLimit.Light);
 
-            if (response.StatusCode != HttpStatusCode.OK)
+            if (response.StatusCode == HttpStatusCode.OK)
             {
-                return null;
+                return JsonConvert.DeserializeObject<Meeting>(response.Content);
             }
-
-            return JsonConvert.DeserializeObject<Meeting>(response.Content);
+            _logger.LogWarning($"Zoom.GetPastMeetingDetails for meetingUUID '{meetingUUID}' returned {response.StatusCode} - {response.StatusDescription}");
+            if (!String.IsNullOrEmpty(response.ErrorMessage))
+            {
+                _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                _logger.LogWarning($"ErrorException: {response.ErrorException}");
+            }
+            return null;
         }
 
         /// <summary>
@@ -344,7 +395,12 @@ namespace ZoomClient
             {
                 return JsonConvert.DeserializeObject<Meeting>(response.Content);
             }
-
+            _logger.LogWarning($"Zoom.CreateMeetingForUser userId '{userId}' returned {response.StatusCode} - {response.StatusDescription}");
+            if (!String.IsNullOrEmpty(response.ErrorMessage))
+            {
+                _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                _logger.LogWarning($"ErrorException: {response.ErrorException}");
+            }
             return null;
         }
 
@@ -365,7 +421,18 @@ namespace ZoomClient
             var response = client.Execute(request);
             Thread.Sleep(RateLimit.Light);
 
-            return response.StatusCode == HttpStatusCode.NoContent;
+            if (response.StatusCode == HttpStatusCode.NoContent)
+            {
+                return true;
+            }
+
+            _logger.LogWarning($"Zoom.EndMeeting '{meetingId}' returned {response.StatusCode} - {response.StatusDescription}");
+            if (!String.IsNullOrEmpty(response.ErrorMessage))
+            {
+                _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                _logger.LogWarning($"ErrorException: {response.ErrorException}");
+            }
+            return false;
         }
 
         /// <summary>
@@ -404,7 +471,18 @@ namespace ZoomClient
             var response = client.Execute(request);
             Thread.Sleep(RateLimit.Light);
 
-            return response.StatusCode == HttpStatusCode.NoContent;
+            if (response.StatusCode == HttpStatusCode.NoContent)
+            {
+                return true;
+            }
+
+            _logger.LogWarning($"Zoom.DeleteMeeting '{meetingId}' returned {response.StatusCode} - {response.StatusDescription}");
+            if (!String.IsNullOrEmpty(response.ErrorMessage))
+            {
+                _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                _logger.LogWarning($"ErrorException: {response.ErrorException}");
+            }
+            return false;
         }
 
         /// <summary>
@@ -434,13 +512,24 @@ namespace ZoomClient
                 var response = client.Execute(request);
                 Thread.Sleep(RateLimit.Medium);
 
-                var result = JsonConvert.DeserializeObject<ZList<Meeting>>(response.Content);
-                if (result != null && result.Results != null)
+                if (response.StatusCode == HttpStatusCode.OK && response.Content != null)
                 {
-                    meetings.AddRange(result.Results);
+                    var result = JsonConvert.DeserializeObject<ZList<Meeting>>(response.Content);
+                    if (result?.Results != null)
+                    {
+                        meetings.AddRange(result.Results);
+                        pages = result.page_count;
+                    }
                 }
-
-                pages = result.page_count;
+                else
+                {
+                    _logger.LogWarning($"Zoom.GetCloudRecordingsForUser for userId '{userId}' pg{page} returned {response.StatusCode} - {response.StatusDescription}");
+                    if (!String.IsNullOrEmpty(response.ErrorMessage))
+                    {
+                        _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                        _logger.LogWarning($"ErrorException: {response.ErrorException}");
+                    }
+                }
             }
             while (page < pages);
 
@@ -474,13 +563,28 @@ namespace ZoomClient
                 var response = client.Execute(request);
                 Thread.Sleep(RateLimit.Medium);
 
-                var result = JsonConvert.DeserializeObject<ZList<Meeting>>(response.Content);
-                if (result != null && result.Results != null)
+                if (response.StatusCode == HttpStatusCode.OK && response.Content != null)
                 {
-                    meetings.AddRange(result.Results);
+                    var result = JsonConvert.DeserializeObject<ZList<Meeting>>(response.Content);
+                    if (result?.Results != null)
+                    {
+                        meetings.AddRange(result.Results);
+                        nextPageToken = result.next_page_token;
+                    }
+                    else
+                    {
+                        nextPageToken = "";
+                    }
                 }
-
-                nextPageToken = result.next_page_token;
+                else
+                {
+                    _logger.LogWarning($"Zoom.GetCloudRecordingsForAccount for accountId '{accountId}' returned {response.StatusCode} - {response.StatusDescription}");
+                    if (!String.IsNullOrEmpty(response.ErrorMessage))
+                    {
+                        _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                        _logger.LogWarning($"ErrorException: {response.ErrorException}");
+                    }
+                }
             }
             while (nextPageToken != "");
 
@@ -553,7 +657,18 @@ namespace ZoomClient
             var response = client.Execute(request);
             Thread.Sleep(RateLimit.Light);
 
-            return response.StatusCode == HttpStatusCode.NoContent;
+            if (response.StatusCode == HttpStatusCode.NoContent)
+            {
+                return true;
+            }
+
+            _logger.LogWarning($"Zoom.DeleteRecording meetingId '{meetingId}' recordingId '{recordingId}' returned {response.StatusCode} - {response.StatusDescription}");
+            if (!String.IsNullOrEmpty(response.ErrorMessage))
+            {
+                _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                _logger.LogWarning($"ErrorException: {response.ErrorException}");
+            }
+            return false;
         }
 
         /// <summary>
@@ -576,6 +691,12 @@ namespace ZoomClient
                 return JsonConvert.DeserializeObject<PlanUsage>(response.Content);
             }
 
+            _logger.LogWarning($"Zoom.GetPlanUsage returned {response.StatusCode} - {response.StatusDescription}");
+            if (!String.IsNullOrEmpty(response.ErrorMessage))
+            {
+                _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                _logger.LogWarning($"ErrorException: {response.ErrorException}");
+            }
             return null;
         }
 
@@ -606,16 +727,27 @@ namespace ZoomClient
                 var response = client.Execute(request);
                 Thread.Sleep(RateLimit.Heavy);
 
-                if (response.StatusCode == HttpStatusCode.OK)
+                if (response.StatusCode == HttpStatusCode.OK && response.Content != null)
                 {
                     var result = JsonConvert.DeserializeObject<ZList<Participant>>(response.Content);
-                    participants.AddRange(result.Results);
-
-                    nextPageToken = result.next_page_token;
+                    if (result?.Results != null)
+                    {
+                        participants.AddRange(result.Results);
+                        nextPageToken = result.next_page_token;
+                    }
+                    else
+                    {
+                        nextPageToken = "";
+                    }
                 }
                 else
                 {
-                    return null;
+                    _logger.LogWarning($"Zoom.GetParticipantReport for meetingId '{meetingId}' returned {response.StatusCode} - {response.StatusDescription}");
+                    if (!String.IsNullOrEmpty(response.ErrorMessage))
+                    {
+                        _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                        _logger.LogWarning($"ErrorException: {response.ErrorException}");
+                    }
                 }
             }
             while (nextPageToken != "");
@@ -650,6 +782,11 @@ namespace ZoomClient
             }
 
             _logger.LogWarning($"Zoom.UploadProfilePicture returned {response.StatusCode} - {response.StatusDescription}");
+            if (!String.IsNullOrEmpty(response.ErrorMessage))
+            {
+                _logger.LogWarning($"ErrorMessage: {response.ErrorMessage}");
+                _logger.LogWarning($"ErrorException: {response.ErrorException}");
+            }
 
             return false;
         }
