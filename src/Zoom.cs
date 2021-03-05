@@ -352,7 +352,7 @@ namespace ZoomClient
         public Meeting GetPastMeetingDetails(string meetingUUID)
         {
             var request = new RestRequest("/past_meetings/{meetingUUID}", Method.GET, DataFormat.Json)
-                .AddParameter("meetingUUID", meetingUUID, ParameterType.UrlSegment);
+                .AddParameter("meetingUUID", meetingUUID.FixUUIDSlashEncoding(), ParameterType.UrlSegment);
 
             client.Authenticator = NewToken;
             var response = client.Execute(request);
@@ -650,7 +650,7 @@ namespace ZoomClient
             client.Authenticator = NewToken;
 
             var request = new RestRequest("/meetings/{meetingId}/recordings/{recordingId}", Method.DELETE, DataFormat.Json)
-                .AddParameter("meetingId", meetingId, ParameterType.UrlSegment)
+                .AddParameter("meetingId", meetingId.FixUUIDSlashEncoding(), ParameterType.UrlSegment)
                 .AddParameter("recordingId", recordingId, ParameterType.UrlSegment)
                 .AddParameter("action", "trash", ParameterType.QueryString);
 
@@ -716,7 +716,7 @@ namespace ZoomClient
             do
             {
                 var request = new RestRequest("/report/meetings/{meetingId}/participants", Method.GET, DataFormat.Json)
-                    .AddParameter("meetingId", meetingId, ParameterType.UrlSegment);
+                    .AddParameter("meetingId", meetingId.FixUUIDSlashEncoding(), ParameterType.UrlSegment);
 
                 if (nextPageToken != "")
                 {

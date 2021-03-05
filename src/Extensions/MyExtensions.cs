@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Web;
 
 namespace ZoomClient.Extensions
 {
@@ -188,6 +189,20 @@ namespace ZoomClient.Extensions
 
             fileInfo.MoveTo(newName);
             return true;
+        }
+
+        /// <summary>
+        /// Double-encodes UUID if necessary as specified in Zoom API docs for calls accepting UUID
+        /// </summary>
+        /// <param name="UUID">UUID to double-encode if necessary</param>
+        /// <returns>UUID with proper encoding if needed</returns>
+        public static string FixUUIDSlashEncoding(this string UUID)
+        {
+            if (UUID.StartsWith(@"/") || UUID.Contains(@"//"))
+            {
+                return HttpUtility.UrlEncode(HttpUtility.UrlEncode(UUID));
+            }
+            return UUID;
         }
     }
 }
