@@ -648,9 +648,10 @@ namespace ZoomClient
         public bool DeleteRecording(string meetingId, string recordingId)
         {
             client.Authenticator = NewToken;
+            meetingId = meetingId.FixUUIDSlashEncoding();
 
             var request = new RestRequest("/meetings/{meetingId}/recordings/{recordingId}", Method.DELETE, DataFormat.Json)
-                .AddParameter("meetingId", meetingId.FixUUIDSlashEncoding(), ParameterType.UrlSegment)
+                .AddParameter("meetingId", meetingId, ParameterType.UrlSegment)
                 .AddParameter("recordingId", recordingId, ParameterType.UrlSegment)
                 .AddParameter("action", "trash", ParameterType.QueryString);
 

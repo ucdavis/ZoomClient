@@ -7,10 +7,10 @@
     <Description>Zoom API client for authenticating, reading, and writing to some of the available Zoom API calls.</Description>
     <RepositoryUrl>gitproj/ZoomClient</RepositoryUrl>
     <PackageTags>Zoom API Rest Client JWT</PackageTags>
-    <Version>1.0.12</Version>
-    <PackageReleaseNotes>no really, really double uuid double-encoding. as in UrlEncode(UrlEncode(uuid))</PackageReleaseNotes>
-    <AssemblyVersion>1.0.12.0</AssemblyVersion>
-    <FileVersion>1.0.12.0</FileVersion>
+    <Version>1.0.13</Version>
+    <PackageReleaseNotes>Delete Recording logs double-encoded UUID</PackageReleaseNotes>
+    <AssemblyVersion>1.0.13.0</AssemblyVersion>
+    <FileVersion>1.0.13.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
