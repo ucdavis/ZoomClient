@@ -1,24 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <PackageId>ZoomClient.Law.Ucdavis.Edu</PackageId>
     <Authors>UC Davis School of Law</Authors>
     <Description>Zoom API client for authenticating, reading, and writing to some of the available Zoom API calls.</Description>
     <RepositoryUrl>gitproj/ZoomClient</RepositoryUrl>
-    <PackageTags>Zoom API Rest Client JWT</PackageTags>
-    <Version>1.0.13</Version>
+    <PackageTags>Zoom API Rest Client OAuth</PackageTags>
+    <Version>1.0.14</Version>
     <PackageReleaseNotes>Delete Recording logs double-encoded UUID</PackageReleaseNotes>
-    <AssemblyVersion>1.0.13.0</AssemblyVersion>
-    <FileVersion>1.0.13.0</FileVersion>
+    <AssemblyVersion>1.0.14.0</AssemblyVersion>
+    <FileVersion>1.0.14.0</FileVersion>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="JWT" Version="7.3.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.5" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="RestSharp" Version="106.11.7" />
-    <PackageReference Include="RestSharp.Serializers.NewtonsoftJson" Version="106.11.7" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="RestSharp" Version="108.0.3" />
+    <PackageReference Include="RestSharp.Serializers.NewtonsoftJson" Version="108.0.3" />
   </ItemGroup>
 
 </Project>

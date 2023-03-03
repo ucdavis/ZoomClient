@@ -3,10 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
-using JWT.Algorithms;
-using JWT.Builder;
 using RestSharp;
-using RestSharp.Authenticators;
 using ZoomClient.Domain;
 using ZoomClient.Extensions;
 using System.IO;
@@ -14,16 +11,19 @@ using ZoomClient.Domain.Billing;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Logging;
 using RestSharp.Serializers.NewtonsoftJson;
+using ZoomClient.Domain.Auth;
+using Microsoft.Extensions.Options;
 
 namespace ZoomClient
 {
     public class Zoom
     {
+        private readonly string ApiUrl = "https://api.zoom.us/";
         private readonly string BaseUrl = "https://api.zoom.us/v2/";
-        private RestClient client = null;
-        private int PageSize = 80;
+        private readonly RestClient client = null;
+        private readonly int PageSize = 80;
         private Options _zoomOptions;
-        private ILogger<Zoom> _logger;
+        private readonly ILogger<Zoom> _logger;
 
         public Zoom(ILogger<Zoom> logger)
         {
@@ -32,11 +32,15 @@ namespace ZoomClient
             _logger = logger;
         }
 
-        public Zoom(Options zoomOptions, ILogger<Zoom> logger)
+        public Zoom(IOptions<Options> zoomOptions, ILogger<Zoom> logger)
         {
-            client = new RestClient(BaseUrl);
-            _zoomOptions = zoomOptions;
+            _zoomOptions = zoomOptions.Value;
             _logger = logger;
+            client = new RestClient(BaseUrl)
+            {
+                Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions)
+            };
+            client.UseNewtonsoftJson();
         }
 
         public Options Options
@@ -44,6 +48,7 @@ namespace ZoomClient
             set
             {
                 _zoomOptions = value;
+                client.Authenticator = new ZoomAuthenticator(ApiUrl, value);
             }
         }
 
@@ -55,9 +60,7 @@ namespace ZoomClient
         /// <remarks>https://marketplace.zoom.us/docs/api-reference/zoom-api/users/user</remarks>
         public User GetUser(string userId)
         {
-            client.Authenticator = NewToken;
-
-            var request = new RestRequest("users/{userId}", Method.GET, DataFormat.Json)
+            var request = new RestRequest("users/{userId}", Method.Get)
                 .AddParameter("userId", userId, ParameterType.UrlSegment);
 
             var response = client.Execute(request);
@@ -103,12 +106,11 @@ namespace ZoomClient
             {
                 page++;
 
-                var request = new RestRequest("users", Method.GET, DataFormat.Json)
+                var request = new RestRequest("users", Method.Get)
                     .AddParameter("status", userStatus)
                     .AddParameter("page_size", PageSize)
                     .AddParameter("page_number", page);
 
-                client.Authenticator = NewToken;
                 var response = client.Execute(request);
                 Thread.Sleep(RateLimit.Medium);
 
@@ -147,9 +149,7 @@ namespace ZoomClient
         /// <remarks>https://marketplace.zoom.us/docs/api-reference/zoom-api/users/usercreate</remarks>
         public UserInfo CreateUser(UserRequest userRequest)
         {
-            client.Authenticator = NewToken;
-
-            var request = new RestRequest("users", Method.POST, DataFormat.Json)
+            var request = new RestRequest("users", Method.Post)
                 .AddJsonBody(userRequest);
 
             var response = client.Execute(request);
@@ -179,9 +179,7 @@ namespace ZoomClient
         /// <remarks>https://marketplace.zoom.us/docs/api-reference/zoom-api/users/userupdate</remarks>
         public bool UpdateUserProfile(string userId, UserUpdate profileChanges)
         {
-            client.Authenticator = NewToken;
-
-            var request = new RestRequest("users/{userId}", Method.PATCH, DataFormat.Json)
+            var request = new RestRequest("users/{userId}", Method.Patch)
                 .AddParameter("userId", userId, ParameterType.UrlSegment)
                 .AddJsonBody(profileChanges);
 
@@ -221,9 +219,7 @@ namespace ZoomClient
         /// <remarks>https://marketplace.zoom.us/docs/api-reference/zoom-api/meetings/meeting</remarks>
         public Meeting GetMeetingDetails(string meetingId, string occurrenceId)
         {
-            client.Authenticator = NewToken;
-
-            var request = new RestRequest("/meetings/{meetingId}", Method.GET, DataFormat.Json)
+            var request = new RestRequest("/meetings/{meetingId}", Method.Get)
                 .AddParameter("meetingId", meetingId, ParameterType.UrlSegment);
 
             // TODO add new parameter:  bool show_previous_occurrences
@@ -278,13 +274,12 @@ namespace ZoomClient
             {
                 page++;
 
-                var request = new RestRequest("users/{userId}/meetings", Method.GET, DataFormat.Json)
+                var request = new RestRequest("users/{userId}/meetings", Method.Get)
                     .AddParameter("userId", userId, ParameterType.UrlSegment)
                     .AddParameter("type", meetingType)
                     .AddParameter("page_size", PageSize)
                     .AddParameter("page_number", page);
 
-                client.Authenticator = NewToken;
                 var response = client.Execute(request);
                 Thread.Sleep(RateLimit.Medium);
 
@@ -322,10 +317,9 @@ namespace ZoomClient
         /// <remarks>https://marketplace.zoom.us/docs/api-reference/zoom-api/meetings/pastmeetings</remarks>
         public List<Meeting> GetPastMeetingInstances(string meetingId)
         {
-            var request = new RestRequest("/past_meetings/{meetingId}/instances", Method.GET, DataFormat.Json)
+            var request = new RestRequest("/past_meetings/{meetingId}/instances", Method.Get)
                 .AddParameter("meetingId", meetingId, ParameterType.UrlSegment);
 
-            client.Authenticator = NewToken;
             var response = client.Execute(request);
             Thread.Sleep(RateLimit.Medium);
 
@@ -351,10 +345,9 @@ namespace ZoomClient
         /// <remarks>https://marketplace.zoom.us/docs/api-reference/zoom-api/meetings/pastmeetingdetails</remarks>
         public Meeting GetPastMeetingDetails(string meetingUUID)
         {
-            var request = new RestRequest("/past_meetings/{meetingUUID}", Method.GET, DataFormat.Json)
+            var request = new RestRequest("/past_meetings/{meetingUUID}", Method.Get)
                 .AddParameter("meetingUUID", meetingUUID.FixUUIDSlashEncoding(), ParameterType.UrlSegment);
 
-            client.Authenticator = NewToken;
             var response = client.Execute(request);
             Thread.Sleep(RateLimit.Light);
 
@@ -380,13 +373,12 @@ namespace ZoomClient
         /// <remarks>https://marketplace.zoom.us/docs/api-reference/zoom-api/meetings/meetingcreate</remarks>
         public Meeting CreateMeetingForUser(MeetingRequest meeting, string userId)
         {
-            client.Authenticator = NewToken;
-
-            var request = new RestRequest("users/{userId}/meetings", Method.POST, DataFormat.Json)
+            var request = new RestRequest("users/{userId}/meetings", Method.Post)
                 .AddParameter("userId", userId, ParameterType.UrlSegment)
                 .AddJsonBody(meeting);
 
-            _logger.LogDebug($"Create Meeting For User JSON: {JsonConvert.SerializeObject(meeting)}; Request Body {request.Body}");
+            var body = request.Parameters.FirstOrDefault(p => p.Type == ParameterType.RequestBody);
+            _logger.LogDebug($"Create Meeting For User JSON: {JsonConvert.SerializeObject(meeting)}; Request Body {body?.Value}");
 
             var response = client.Execute(request);
             Thread.Sleep(RateLimit.Medium);
@@ -412,9 +404,7 @@ namespace ZoomClient
         /// <remarks>https://marketplace.zoom.us/docs/api-reference/zoom-api/meetings/meetingstatus</remarks>
         public bool EndMeeting(string meetingId)
         {
-            client.Authenticator = NewToken;
-
-            var request = new RestRequest("meetings/{meetingId}/status", Method.PUT, DataFormat.Json)
+            var request = new RestRequest("meetings/{meetingId}/status", Method.Put)
                 .AddParameter("meetingId", meetingId, ParameterType.UrlSegment)
                 .AddJsonBody(new EndAction());
 
@@ -457,9 +447,7 @@ namespace ZoomClient
         /// <remarks>https://marketplace.zoom.us/docs/api-reference/zoom-api/meetings/meetingdelete</remarks>
         public bool DeleteMeeting(string meetingId, string occurrenceId, bool sendReminder = false)
         {
-            client.Authenticator = NewToken;
-
-            var request = new RestRequest("meetings/{meetingId}", Method.DELETE, DataFormat.Json)
+            var request = new RestRequest("meetings/{meetingId}", Method.Delete)
                 .AddParameter("meetingId", meetingId, ParameterType.UrlSegment)
                 .AddParameter("schedule_for_reminder", sendReminder, ParameterType.QueryString);
 
@@ -501,14 +489,13 @@ namespace ZoomClient
             {
                 page++;
 
-                var request = new RestRequest("users/{userId}/recordings", Method.GET, DataFormat.Json)
+                var request = new RestRequest("users/{userId}/recordings", Method.Get)
                     .AddParameter("userId", userId, ParameterType.UrlSegment)
                     .AddParameter("page_size", PageSize)
                     .AddParameter("page_number", page)
                     .AddParameter("from", DateTime.Now.AddMonths(-3).ToZoomUTCFormat())
                     .AddParameter("to", DateTime.Now.ToZoomUTCFormat());
 
-                client.Authenticator = NewToken;
                 var response = client.Execute(request);
                 Thread.Sleep(RateLimit.Medium);
 
@@ -548,7 +535,7 @@ namespace ZoomClient
 
             do
             {
-                var request = new RestRequest("accounts/{accountId}/recordings", Method.GET, DataFormat.Json)
+                var request = new RestRequest("accounts/{accountId}/recordings", Method.Get)
                     .AddParameter("accountId", accountId, ParameterType.UrlSegment)
                     .AddParameter("page_size", PageSize)
                     .AddParameter("from", DateTime.Now.AddDays(-7).ToZoomUTCFormat())
@@ -559,7 +546,6 @@ namespace ZoomClient
                     request = request.AddParameter("next_page_token", nextPageToken);
                 }
 
-                client.Authenticator = NewToken;
                 var response = client.Execute(request);
                 Thread.Sleep(RateLimit.Medium);
 
@@ -597,12 +583,14 @@ namespace ZoomClient
         /// <param name="url"></param>
         /// <returns></returns>
         /// <remarks>https://marketplace.zoom.us/docs/api-reference/zoom-api/cloud-recording/recordingget</remarks>
-        public IRestResponse DownloadRecording(string url)
+        public RestResponse DownloadRecording(string url)
         {
-            var downloadClient = new RestClient("https://api.zoom.us/");
+            var downloadClient = new RestClient(ApiUrl)
+            {
+                Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions)
+            };
 
-            var request = new RestRequest(url, Method.GET)
-                .AddParameter("access_token", NewTokenString, ParameterType.QueryString);
+            var request = new RestRequest(url, Method.Get);
 
             return downloadClient.Execute(request);
         }
@@ -614,22 +602,26 @@ namespace ZoomClient
         /// <param name="saveToPath"></param>
         /// <returns></returns>
         /// <remarks>https://marketplace.zoom.us/docs/api-reference/zoom-api/cloud-recording/recordingget</remarks>
-        public IRestResponse DownloadRecordingStream(string url, string saveToPath)
+        public RestResponse DownloadRecordingStream(string url, string saveToPath)
         {
-            var downloadClient = new RestClient("https://api.zoom.us/");
+            var downloadClient = new RestClient(ApiUrl)
+            {
+                Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions)
+            };
 
             using (var writer = new FileStream(saveToPath, FileMode.Create, FileAccess.Write, FileShare.None, 128000, false))
             {
                 using (var reader = new MemoryStream())
                 {
-                    var request = new RestRequest(url, Method.GET)
-                        .AddParameter("access_token", NewTokenString, ParameterType.QueryString);
-
-                    request.ResponseWriter = responseStream =>
+                    var request = new RestRequest(url, Method.Get)
                     {
-                        using (responseStream)
+                        ResponseWriter = responseStream =>
                         {
-                            responseStream.CopyTo(writer);
+                            using (responseStream)
+                            {
+                                responseStream.CopyTo(writer);
+                                return writer;
+                            }
                         }
                     };
 
@@ -647,10 +639,9 @@ namespace ZoomClient
         /// <remarks>https://marketplace.zoom.us/docs/api-reference/zoom-api/cloud-recording/recordingdeleteone</remarks>
         public bool DeleteRecording(string meetingId, string recordingId)
         {
-            client.Authenticator = NewToken;
             meetingId = meetingId.FixUUIDSlashEncoding();
 
-            var request = new RestRequest("/meetings/{meetingId}/recordings/{recordingId}", Method.DELETE, DataFormat.Json)
+            var request = new RestRequest("/meetings/{meetingId}/recordings/{recordingId}", Method.Delete)
                 .AddParameter("meetingId", meetingId, ParameterType.UrlSegment)
                 .AddParameter("recordingId", recordingId, ParameterType.UrlSegment)
                 .AddParameter("action", "trash", ParameterType.QueryString);
@@ -679,9 +670,7 @@ namespace ZoomClient
         /// <remarks>https://marketplace.zoom.us/docs/api-reference/zoom-api/billing/getplanusage</remarks>
         public PlanUsage GetPlanUsage()
         {
-            client.Authenticator = NewToken;
-
-            var request = new RestRequest("/accounts/{accountId}/plans/usage", Method.GET, DataFormat.Json)
+            var request = new RestRequest("/accounts/{accountId}/plans/usage", Method.Get)
                 .AddParameter("accountId", "me", ParameterType.UrlSegment);
 
             var response = client.Execute(request);
@@ -716,7 +705,7 @@ namespace ZoomClient
 
             do
             {
-                var request = new RestRequest("/report/meetings/{meetingId}/participants", Method.GET, DataFormat.Json)
+                var request = new RestRequest("/report/meetings/{meetingId}/participants", Method.Get)
                     .AddParameter("meetingId", meetingId.FixUUIDSlashEncoding(), ParameterType.UrlSegment);
 
                 if (nextPageToken != "")
@@ -724,7 +713,6 @@ namespace ZoomClient
                     request = request.AddParameter("next_page_token", nextPageToken);
                 }
 
-                client.Authenticator = NewToken;
                 var response = client.Execute(request);
                 Thread.Sleep(RateLimit.Heavy);
 
@@ -767,9 +755,7 @@ namespace ZoomClient
             // fail if no image or no userid
             if (String.IsNullOrEmpty(userId) || !File.Exists(imagePath)) { return false; }
 
-            client.Authenticator = NewToken;
-
-            var request = new RestRequest("/users/{userId}/picture", Method.POST, DataFormat.None)
+            var request = new RestRequest("/users/{userId}/picture", Method.Post)
                 .AddParameter("userId", userId, ParameterType.UrlSegment);
 
             request.AddFile("pic_file", imagePath, "multipart/form-data");
@@ -790,32 +776,6 @@ namespace ZoomClient
             }
 
             return false;
-        }
-
-        private JwtAuthenticator NewToken
-        {
-            get
-            {
-                return new JwtAuthenticator(NewTokenString);
-            }
-        }
-
-        private string NewTokenString
-        {
-            get
-            {
-                if (_zoomOptions == null)
-                {
-                    throw new ArgumentException("Options not set.");
-                }
-
-                return new JwtBuilder()
-                    .WithAlgorithm(new HMACSHA256Algorithm())
-                    .WithSecret(_zoomOptions.ApiSecret)
-                    .AddClaim("iss", _zoomOptions.ApiKey)
-                    .AddClaim("exp", DateTimeOffset.UtcNow.AddSeconds(5).ToUnixTimeSeconds())
-                    .Encode();
-            }
         }
     }
 }

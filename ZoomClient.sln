@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30523.141
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33424.131
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZoomClient", "src\ZoomClient.csproj", "{A4F0ED91-F445-4173-B06A-321973AB0D64}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample.Web", "samples\Sample.Web\Sample.Web.csproj", "{F3B2F8DC-9CEC-4725-BCD8-A9B930273020}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sample.Web", "samples\Sample.Web\Sample.Web.csproj", "{F3B2F8DC-9CEC-4725-BCD8-A9B930273020}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

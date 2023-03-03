@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Sample.Web.Models;
 using ZoomClient;
@@ -23,8 +18,6 @@ namespace Sample.Web.Controllers
             _logger = logger;
             _zoomClient = zoomClient;
             _options = options.Value;
-
-            _zoomClient.Options = _options;
         }
 
         public IActionResult Index()
