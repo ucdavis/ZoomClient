@@ -1,5 +1,8 @@
-﻿using RestSharp;
+﻿using Microsoft.Extensions.Caching.Memory;
+using RestSharp;
 using RestSharp.Authenticators;
+using System;
+using System.Reflection.Metadata;
 using System.Threading.Tasks;
 
 namespace ZoomClient.Domain.Auth
@@ -14,16 +17,19 @@ namespace ZoomClient.Domain.Auth
         readonly string _accountId;
         readonly string _clientId;
         readonly string _clientSecret;
+        private readonly IMemoryCache _memoryCache;
+        private const string CACHEKEY = "authtoken";
 
-        public ZoomAuthenticator(string baseUrl, Options options) : base("")
+        public ZoomAuthenticator(string baseUrl, Options options, IMemoryCache cache) : base("")
         {
             _baseUrl = baseUrl;
             _accountId = options.AccountId;
             _clientId = options.ClientId;
             _clientSecret = options.ClientSecret;
+            _memoryCache = cache;
         }
 
-        protected override async ValueTask<Parameter> GetAuthenticationParameter(string accessToken)
+        protected override async ValueTask<RestSharp.Parameter> GetAuthenticationParameter(string accessToken)
         {
             Token = string.IsNullOrEmpty(Token) ? await GetToken() : Token;
             return new HeaderParameter(KnownHeaders.Authorization, Token);
@@ -31,6 +37,11 @@ namespace ZoomClient.Domain.Auth
 
         async Task<string> GetToken()
         {
+            if (_memoryCache.TryGetValue<string>(CACHEKEY, out var token))
+            {
+                return token;
+            }
+
             var options = new RestClientOptions(_baseUrl);
             using var client = new RestClient(options)
             {
@@ -41,7 +52,15 @@ namespace ZoomClient.Domain.Auth
                 .AddParameter("grant_type", "account_credentials")
                 .AddParameter("account_id", _accountId);
             var response = await client.PostAsync<TokenResponse>(request);
-            return $"{response!.TokenType} {response!.AccessToken}";
+            token = $"{response!.TokenType} {response!.AccessToken}";
+
+            var cacheEntryOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(55))
+                .SetSlidingExpiration(TimeSpan.FromMinutes(15));
+
+            _memoryCache.Set(CACHEKEY, token);
+
+            return token;
         }
     }
 }

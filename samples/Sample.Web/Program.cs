@@ -16,6 +16,7 @@ namespace Sample.Web
 
             builder.Services.Configure<Options>(builder.Configuration.GetSection(Options.SectionName));
             builder.Services.AddScoped<Zoom>();
+            builder.Services.AddMemoryCache();
 
             var app = builder.Build();
 

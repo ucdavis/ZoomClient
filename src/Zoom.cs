@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using RestSharp.Serializers.NewtonsoftJson;
 using ZoomClient.Domain.Auth;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ZoomClient
 {
@@ -24,6 +25,7 @@ namespace ZoomClient
         private readonly int PageSize = 80;
         private Options _zoomOptions;
         private readonly ILogger<Zoom> _logger;
+        private readonly IMemoryCache _memoryCache;
 
         public Zoom(ILogger<Zoom> logger)
         {
@@ -32,13 +34,14 @@ namespace ZoomClient
             _logger = logger;
         }
 
-        public Zoom(IOptions<Options> zoomOptions, ILogger<Zoom> logger)
+        public Zoom(IOptions<Options> zoomOptions, ILogger<Zoom> logger, IMemoryCache memoryCache)
         {
             _zoomOptions = zoomOptions.Value;
             _logger = logger;
+            _memoryCache = memoryCache;
             client = new RestClient(BaseUrl)
             {
-                Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions)
+                Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions, _memoryCache)
             };
             client.UseNewtonsoftJson();
         }
@@ -48,7 +51,7 @@ namespace ZoomClient
             set
             {
                 _zoomOptions = value;
-                client.Authenticator = new ZoomAuthenticator(ApiUrl, value);
+                client.Authenticator = new ZoomAuthenticator(ApiUrl, value, _memoryCache);
             }
         }
 
@@ -587,7 +590,7 @@ namespace ZoomClient
         {
             var downloadClient = new RestClient(ApiUrl)
             {
-                Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions)
+                Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions, _memoryCache)
             };
 
             var request = new RestRequest(url, Method.Get);
@@ -606,7 +609,7 @@ namespace ZoomClient
         {
             var downloadClient = new RestClient(ApiUrl)
             {
-                Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions)
+                Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions, _memoryCache)
             };
 
             using (var writer = new FileStream(saveToPath, FileMode.Create, FileAccess.Write, FileShare.None, 128000, false))
