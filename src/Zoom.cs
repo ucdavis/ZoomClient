@@ -41,7 +41,7 @@ namespace ZoomClient
             _memoryCache = memoryCache;
             client = new RestClient(BaseUrl)
             {
-                Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions, _memoryCache)
+                Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions, _memoryCache, _logger)
             };
             client.UseNewtonsoftJson();
         }
@@ -51,7 +51,7 @@ namespace ZoomClient
             set
             {
                 _zoomOptions = value;
-                client.Authenticator = new ZoomAuthenticator(ApiUrl, value, _memoryCache);
+                client.Authenticator = new ZoomAuthenticator(ApiUrl, value, _memoryCache, _logger);
             }
         }
 
@@ -590,7 +590,7 @@ namespace ZoomClient
         {
             var downloadClient = new RestClient(ApiUrl)
             {
-                Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions, _memoryCache)
+                Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions, _memoryCache, _logger)
             };
 
             var request = new RestRequest(url, Method.Get);
@@ -609,7 +609,7 @@ namespace ZoomClient
         {
             var downloadClient = new RestClient(ApiUrl)
             {
-                Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions, _memoryCache)
+                Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions, _memoryCache, _logger)
             };
 
             using (var writer = new FileStream(saveToPath, FileMode.Create, FileAccess.Write, FileShare.None, 128000, false))

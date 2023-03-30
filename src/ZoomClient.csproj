@@ -7,7 +7,7 @@
     <Description>Zoom API client for authenticating, reading, and writing to some of the available Zoom API calls.</Description>
     <RepositoryUrl>gitproj/ZoomClient</RepositoryUrl>
     <PackageTags>Zoom API Rest Client OAuth</PackageTags>
-    <Version>1.0.16</Version>
+    <Version>1.0.17</Version>
     <PackageReleaseNotes>Delete Recording logs double-encoded UUID</PackageReleaseNotes>
     <AssemblyVersion></AssemblyVersion>
     <FileVersion></FileVersion>
