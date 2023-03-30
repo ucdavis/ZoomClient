@@ -59,10 +59,10 @@ namespace ZoomClient.Domain.Auth
             token = $"{response!.TokenType} {response!.AccessToken}";
 
             var cacheEntryOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromMinutes(46))
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(55))
                 .SetSlidingExpiration(TimeSpan.FromMinutes(15));
 
-            _memoryCache.Set(CACHEKEY, token);
+            _memoryCache.Set(CACHEKEY, token, cacheEntryOptions);
             _logger.LogInformation($"ZoomAuthenticator.GetToken added token to cache.");
 
             return token;
