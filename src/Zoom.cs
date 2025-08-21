@@ -14,6 +14,7 @@ using RestSharp.Serializers.NewtonsoftJson;
 using ZoomClient.Domain.Auth;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Caching.Memory;
+using RestSharp.Authenticators;
 
 namespace ZoomClient
 {
@@ -21,7 +22,7 @@ namespace ZoomClient
     {
         private readonly string ApiUrl = "https://api.zoom.us/";
         private readonly string BaseUrl = "https://api.zoom.us/v2/";
-        private readonly RestClient client = null;
+        private RestClient client = null;
         private readonly int PageSize = 80;
         private Options _zoomOptions;
         private readonly ILogger<Zoom> _logger;
@@ -29,8 +30,7 @@ namespace ZoomClient
 
         public Zoom(ILogger<Zoom> logger)
         {
-            client = new RestClient(BaseUrl);
-            client.UseNewtonsoftJson();
+            client = new RestClient(BaseUrl, configureSerialization: s => s.UseNewtonsoftJson());
             _logger = logger;
         }
 
@@ -39,11 +39,11 @@ namespace ZoomClient
             _zoomOptions = zoomOptions.Value;
             _logger = logger;
             _memoryCache = memoryCache;
-            client = new RestClient(BaseUrl)
+            var options = new RestClientOptions(BaseUrl)
             {
                 Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions, _memoryCache, _logger)
             };
-            client.UseNewtonsoftJson();
+            client = new RestClient(options, configureSerialization: s => s.UseNewtonsoftJson());
         }
 
         public Options Options
@@ -51,7 +51,11 @@ namespace ZoomClient
             set
             {
                 _zoomOptions = value;
-                client.Authenticator = new ZoomAuthenticator(ApiUrl, value, _memoryCache, _logger);
+                var options = new RestClientOptions(BaseUrl)
+                {
+                    Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions, _memoryCache, _logger)
+                };
+                client = new RestClient(options, configureSerialization: s => s.UseNewtonsoftJson());
             }
         }
 
@@ -588,10 +592,11 @@ namespace ZoomClient
         /// <remarks>https://marketplace.zoom.us/docs/api-reference/zoom-api/cloud-recording/recordingget</remarks>
         public RestResponse DownloadRecording(string url)
         {
-            var downloadClient = new RestClient(ApiUrl)
+            var options = new RestClientOptions(ApiUrl)
             {
                 Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions, _memoryCache, _logger)
             };
+            var downloadClient = new RestClient(options);
 
             var request = new RestRequest(url, Method.Get);
 
@@ -607,10 +612,11 @@ namespace ZoomClient
         /// <remarks>https://marketplace.zoom.us/docs/api-reference/zoom-api/cloud-recording/recordingget</remarks>
         public RestResponse DownloadRecordingStream(string url, string saveToPath)
         {
-            var downloadClient = new RestClient(ApiUrl)
+            var options = new RestClientOptions(ApiUrl)
             {
                 Authenticator = new ZoomAuthenticator(ApiUrl, _zoomOptions, _memoryCache, _logger)
             };
+            var downloadClient = new RestClient(options);
 
             using (var writer = new FileStream(saveToPath, FileMode.Create, FileAccess.Write, FileShare.None, 128000, false))
             {

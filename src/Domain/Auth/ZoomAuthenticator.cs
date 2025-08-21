@@ -46,11 +46,11 @@ namespace ZoomClient.Domain.Auth
                 return token;
             }
 
-            var options = new RestClientOptions(_baseUrl);
-            using var client = new RestClient(options)
+            var options = new RestClientOptions(_baseUrl)
             {
                 Authenticator = new HttpBasicAuthenticator(_clientId, _clientSecret)
             };
+            using var client = new RestClient(options);
 
             var request = new RestRequest("oauth/token", Method.Post)
                 .AddParameter("grant_type", "account_credentials")
